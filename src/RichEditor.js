@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo } from "react";
+import React, {useState, useCallback, useMemo } from "react";
 import isHotkey from "is-hotkey";
 import { Editable, withReact, Slate, useSlate } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
-import { withHistory } from "slate-history";
 
 import Box from "@material-ui/core/Box";
 import FormatBoldIcon from "@material-ui/icons/FormatBold";
@@ -15,7 +14,6 @@ import FormatQuoteIcon from "@material-ui/icons/FormatQuote";
 import FormatListNumberedIcon from "@material-ui/icons/FormatListNumbered";
 import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
-import Divider from "@material-ui/core/Divider";
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -25,9 +23,10 @@ const HOTKEYS = {
 };
 
 const RichEditor = ({ value, setValue }) => {
+  
+  const [editor] = useState(() => withReact(createEditor()))
   const renderElement = useCallback(props => <Element {...props} />, []);
-  const renderLeaf = useCallback(props => <Leaf {...props} />, []);
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  const renderLeaf = useCallback(props => <Leaf {...props} />, [])
 
   return (
     <Box p={1} m={2} border={1} borderColor="grey.500" borderRadius={4}>
@@ -90,6 +89,8 @@ const RichEditor = ({ value, setValue }) => {
   );
 };
 
+// ---block---
+
 export const Element = ({ attributes, children, element }) => {
   switch (element.type) {
     case "block-quote":
@@ -107,26 +108,6 @@ export const Element = ({ attributes, children, element }) => {
     default:
       return <p {...attributes}>{children}</p>;
   }
-};
-
-export const Leaf = ({ attributes, children, leaf }) => {
-  if (leaf.bold) {
-    children = <strong>{children}</strong>;
-  }
-
-  if (leaf.code) {
-    children = <code>{children}</code>;
-  }
-
-  if (leaf.italic) {
-    children = <em>{children}</em>;
-  }
-
-  if (leaf.underline) {
-    children = <u>{children}</u>;
-  }
-
-  return <span {...attributes}>{children}</span>;
 };
 
 const BlockButton = ({ format, children }) => {
@@ -148,6 +129,58 @@ const BlockButton = ({ format, children }) => {
   );
 };
 
+const isBlockActive = (editor, format) => {
+  //At any given Location or Span in the editor provided by at (default is the current selection) - https://docs.slatejs.org/api/nodes/editor#editor.nodes-less-than-t-extends-node-greater-than-editor-editor-options-greater-than-generator-less
+  // in the selection, it will check if any of the blocks are of eg block-quote, in that cases, !!match will be true all selected blocks will be reverted to para
+  const [match] = Editor.nodes(editor, {
+    match: n => n.type === format
+  });
+  return !!match;
+};
+
+const toggleBlock = (editor, format) => {  
+  const isActive = isBlockActive(editor, format);
+  const isList = LIST_TYPES.includes(format);
+
+  Transforms.unwrapNodes(editor, {
+    match: n => LIST_TYPES.includes(n.type),
+    split: true
+  });
+
+  Transforms.setNodes(editor, {
+    type: isActive ? "paragraph" : isList ? "list-item" : format
+  });
+
+  if (!isActive && isList) {
+    const block = { type: format, children: [] };
+    Transforms.wrapNodes(editor, block);
+  }
+};
+
+const LIST_TYPES = ["numbered-list", "bulleted-list"];
+
+//---mark---
+
+export const Leaf = ({ attributes, children, leaf }) => {
+  if (leaf.bold) {
+    children = <strong>{children}</strong>;
+  }
+
+  if (leaf.code) {
+    children = <code>{children}</code>;
+  }
+
+  if (leaf.italic) {
+    children = <em>{children}</em>;
+  }
+
+  if (leaf.underline) {
+    children = <u>{children}</u>;
+  }
+
+  return <span {...attributes}>{children}</span>;
+};
+
 const MarkButton = ({ format, children }) => {
   const editor = useSlate();
   return (
@@ -167,58 +200,10 @@ const MarkButton = ({ format, children }) => {
   );
 };
 
-const Menu = React.forwardRef(({ children, ...props }, ref) => (
-  <>
-    <Box
-      display="flex"
-      direction="row"
-      justify="flex-start"
-      alignItems="center"
-      flexWrap="wrap"
-    >
-      {children}
-    </Box>
-    <Box pt={2}>
-      <Divider variant="middle" />
-    </Box>
-  </>
-));
-
-const Toolbar = React.forwardRef(({ className, ...props }, ref) => (
-  <Menu {...props} ref={ref} />
-));
-
-const LIST_TYPES = ["numbered-list", "bulleted-list"];
-
-const isBlockActive = (editor, format) => {
-  const [match] = Editor.nodes(editor, {
-    match: n => n.type === format
-  });
-  return !!match;
-};
-
 const isMarkActive = (editor, format) => {
+  //Get the marks that would be added to text at the current selection
   const marks = Editor.marks(editor);
   return marks ? marks[format] === true : false;
-};
-
-const toggleBlock = (editor, format) => {
-  const isActive = isBlockActive(editor, format);
-  const isList = LIST_TYPES.includes(format);
-
-  Transforms.unwrapNodes(editor, {
-    match: n => LIST_TYPES.includes(n.type),
-    split: true
-  });
-
-  Transforms.setNodes(editor, {
-    type: isActive ? "paragraph" : isList ? "list-item" : format
-  });
-
-  if (!isActive && isList) {
-    const block = { type: format, children: [] };
-    Transforms.wrapNodes(editor, block);
-  }
 };
 
 const toggleMark = (editor, format) => {
@@ -230,6 +215,22 @@ const toggleMark = (editor, format) => {
     Editor.addMark(editor, format, true);
   }
 };
+
+const Menu = React.forwardRef(({ children, ...props }, ref) => (
+  <Box
+    display="flex"
+    direction="row"
+    justify="flex-start"
+    alignItems="center"
+    flexWrap="wrap"
+  >
+    {children}
+  </Box>
+));
+
+const Toolbar = React.forwardRef(({ className, ...props }, ref) => (
+  <Menu {...props} ref={ref} />
+));
 
 export default RichEditor;
 
