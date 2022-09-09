@@ -1,7 +1,9 @@
-import React, {useState, useCallback, useMemo } from "react";
+import React, {useState, useMemo, useContext  } from "react";
 import isHotkey from "is-hotkey";
-import { Editable, withReact, Slate, useSlate } from "slate-react";
+import { Editable, withReact, Slate, useSlate, useSlateStatic } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
+import { withHistory } from 'slate-history'
+import Toolbar from './Components'
 
 import Box from "@material-ui/core/Box";
 import FormatBoldIcon from "@material-ui/icons/FormatBold";
@@ -15,6 +17,8 @@ import FormatListNumberedIcon from "@material-ui/icons/FormatListNumbered";
 import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 
+import UserContext from "./User-Context";
+
 const HOTKEYS = {
   "mod+b": "bold",
   "mod+i": "italic",
@@ -22,20 +26,16 @@ const HOTKEYS = {
   "mod+`": "code"
 };
 
-const RichEditor = ({ value, setValue }) => {
+const RichEditor = () => {
   
-  const [editor] = useState(() => withReact(createEditor()))
-  const renderElement = useCallback(props => <Element {...props} />, []);
-  const renderLeaf = useCallback(props => <Leaf {...props} />, [])
+  // const editor = useMemo(() => withHistory(withReact(createEditor())),[])
+  const editor = useContext(UserContext)
 
   return (
     <Box p={1} m={2} border={1} borderColor="grey.500" borderRadius={4}>
       <Slate
         editor={editor}
-        value={value}
-        onChange={value => {
-          setValue(value);
-        }}
+        value={initialValue}
       >
         <Toolbar>
           <MarkButton format="bold">
@@ -68,8 +68,8 @@ const RichEditor = ({ value, setValue }) => {
         </Toolbar>
         <Box pl={1}>
           <Editable
-            renderElement={renderElement}
-            renderLeaf={renderLeaf}
+            renderElement={props => <Element {...props} />}
+            renderLeaf={props => <Leaf {...props} />}
             placeholder="Enter some rich text…"
             spellCheck
             autoFocus
@@ -91,7 +91,10 @@ const RichEditor = ({ value, setValue }) => {
 
 // ---block---
 
-export const Element = ({ attributes, children, element }) => {
+const Element = (props) => {
+
+  const { attributes, children, element } = props
+
   switch (element.type) {
     case "block-quote":
       return <blockquote {...attributes}>{children}</blockquote>;
@@ -216,21 +219,43 @@ const toggleMark = (editor, format) => {
   }
 };
 
-const Menu = React.forwardRef(({ children, ...props }, ref) => (
-  <Box
-    display="flex"
-    direction="row"
-    justify="flex-start"
-    alignItems="center"
-    flexWrap="wrap"
-  >
-    {children}
-  </Box>
-));
-
-const Toolbar = React.forwardRef(({ className, ...props }, ref) => (
-  <Menu {...props} ref={ref} />
-));
+const initialValue = [
+  {
+    type: 'paragraph',
+    children: [
+      { text: 'This is editable ' },
+      { text: 'rich', bold: true },
+      { text: ' text, ' },
+      { text: 'much', italic: true },
+      { text: ' better than a ' },
+      { text: '<textarea>', code: true },
+      { text: '!' },
+    ],
+  },
+  {
+    type: 'paragraph',
+    children: [
+      {
+        text:
+          "Since it's rich text, you can do things like turn a selection of text ",
+      },
+      { text: 'bold', bold: true },
+      {
+        text:
+          ', or add a semantically rendered block quote in the middle of the page, like this:',
+      },
+    ],
+  },
+  {
+    type: 'block-quote',
+    children: [{ text: 'A wise quote.' }],
+  },
+  {
+    type: 'paragraph',
+    align: 'center',
+    children: [{ text: 'Try it out for yourself!' }],
+  },
+]
 
 export default RichEditor;
 
