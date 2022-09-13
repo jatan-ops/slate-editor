@@ -1,35 +1,36 @@
-import React, { useState, useMemo, createContext, useContext } from 'react'
-import { Transforms, createEditor, Descendant } from 'slate'
-import { Slate, Editable, useSlateStatic, withReact } from 'slate-react'
+import React, { useState, useMemo, useRef } from 'react'
+import { Transforms, createEditor } from 'slate'
+import { Slate, Editable, withReact } from 'slate-react'
 import { withHistory } from 'slate-history'
 import Toolbar from './Components'
 
 import RichEditor from './RichEditor'
 
-import Box from "@material-ui/core/Box";
-
-import UserContext from './User-Context'
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const EditableVoidsExample = () => {
 
-  const editor = useMemo(
-    () => withEditableVoids(withHistory(withReact(createEditor())))
-  ,[])
+  let editorRef = useRef()
+  if (!editorRef.current) editorRef.current = withEditableVoids(withHistory(withReact(createEditor())))
+  const editor = editorRef.current
 
   return (
     <Slate 
       editor={editor} 
       value={initialValue}
-      onChange={value => {
-        const isAstChange = editor.operations.some(
-          op => 'set_selection' !== op.type
-        )
-        if (isAstChange) {
-          // Save the value to Local Storage.
-          const content = JSON.stringify(value)
-          localStorage.setItem('slate-content', content)
-        }
-      }}
+      // onChange={value => {
+      //   const isAstChange = editor.operations.some(
+      //     op => 'set_selection' !== op.type
+      //   )
+      //   if (isAstChange) {
+      //     // Save the value to Local Storage.
+      //     const content = JSON.stringify(value)
+      //     localStorage.setItem('parent-content', content)
+      //   }
+      // }}
     >
       <Toolbar>
         <button
@@ -41,17 +42,10 @@ const EditableVoidsExample = () => {
           add
         </button>
       </Toolbar>
-          
-      <Box pl={1}>
-        <Editable
-          renderElement={props => {
-            return <UserContext.Provider value={editor}>      
-              <Element {...props} />
-            </UserContext.Provider>
-          }}
-          placeholder="Enter some text..."
-        />
-      </Box>
+      <Editable
+        renderElement={props => <Element {...props} />}
+        placeholder="Enter some text..."
+      />
     </Slate>
   )
 }
@@ -86,10 +80,22 @@ const Element = props => {
 
 const EditableVoid = ({ attributes, children, element }) => {
 
-  return (    
-    <div {...attributes} contentEditable={false}>
+  return (      
+    <div {...attributes}>
       <RichEditor />
-      {children}
+      {/* <Container>
+        <Row>
+          <Col md={6} >
+            <RichEditor />
+          </Col>
+        </Row>
+        <Row>
+          <Col md={6} >
+            <RichEditor />
+          </Col>
+        </Row>
+      </Container> */}
+      {children}      
     </div>
   )
 }
@@ -103,7 +109,7 @@ const initialValue = [
           'This is parent editor',
       },
     ],
-  },
+  }
 ]
 
 export default EditableVoidsExample

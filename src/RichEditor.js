@@ -1,9 +1,11 @@
-import React, {useState, useMemo, useContext  } from "react";
+import React, {useState, useMemo, useContext, useEffect, useRef  } from "react";
 import isHotkey from "is-hotkey";
 import { Editable, withReact, Slate, useSlate, useSlateStatic } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
 import { withHistory } from 'slate-history'
 import Toolbar from './Components'
+
+import { v4 as uuidv4 } from 'uuid';
 
 import Box from "@material-ui/core/Box";
 import FormatBoldIcon from "@material-ui/icons/FormatBold";
@@ -16,8 +18,7 @@ import FormatQuoteIcon from "@material-ui/icons/FormatQuote";
 import FormatListNumberedIcon from "@material-ui/icons/FormatListNumbered";
 import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
-
-import UserContext from "./User-Context";
+import './index.css'
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -26,66 +27,79 @@ const HOTKEYS = {
   "mod+`": "code"
 };
 
-const RichEditor = () => {
-  
-  // const editor = useMemo(() => withHistory(withReact(createEditor())),[])
-  const editor = useContext(UserContext)
+const LIST_TYPES = ['numbered-list', 'bulleted-list']
+const TEXT_ALIGN_TYPES = ['left', 'center', 'right', 'justify']
 
-  return (
-    <Box p={1} m={2} border={1} borderColor="grey.500" borderRadius={4}>
-      <Slate
-        editor={editor}
-        value={initialValue}
-      >
-        <Toolbar>
-          <MarkButton format="bold">
-            <FormatBoldIcon />
-          </MarkButton>
-          <MarkButton format="italic">
-            <FormatItalicIcon />
-          </MarkButton>
-          <MarkButton format="underline">
-            <FormatUnderlinedIcon />
-          </MarkButton>
-          <MarkButton format="code">
-            <CodeIcon />
-          </MarkButton>
-          <BlockButton format="heading-one">
-            <LooksOneIcon />
-          </BlockButton>
-          <BlockButton format="heading-two">
-            <LooksTwoIcon />
-          </BlockButton>
-          <BlockButton format="block-quote">
-            <FormatQuoteIcon />
-          </BlockButton>
-          <BlockButton format="numbered-list">
-            <FormatListNumberedIcon />
-          </BlockButton>
-          <BlockButton format="bulleted-list">
-            <FormatListBulletedIcon />
-          </BlockButton>
-        </Toolbar>
-        <Box pl={1}>
-          <Editable
-            renderElement={props => <Element {...props} />}
-            renderLeaf={props => <Leaf {...props} />}
-            placeholder="Enter some rich text…"
-            spellCheck
-            autoFocus
-            onKeyDown={event => {
-              for (const hotkey in HOTKEYS) {
-                if (isHotkey(hotkey, event)) {
-                  event.preventDefault();
-                  const mark = HOTKEYS[hotkey];
-                  toggleMark(editor, mark);
-                }
-              }
-            }}
-          />
-        </Box>
-      </Slate>
-    </Box>
+const RichEditor = () => {
+
+  let editorRef = useRef()
+  if (!editorRef.current) editorRef.current = withHistory(withReact(createEditor()))
+  const editor = editorRef.current
+
+  const renderElement = useCallback(props => <Element {...props} />, [])
+  const renderLeaf = useCallback(props => <Leaf {...props} />, [])
+
+  const [instanceid, setInstanceId] = useState(uuidv4())
+
+  return ( 
+    <Slate
+      editor={editor}
+      value={initialValue}
+      // onChange={value => {
+      //   const isAstChange = editor.operations.some(
+      //     op => 'set_selection' !== op.type
+      //   )
+      //   if (isAstChange) {
+      //     const content = JSON.stringify(value)
+      //     localStorage.setItem(instanceid, content)
+      //   }
+      // }}
+    > 
+      <Toolbar>
+        <MarkButton format="bold">
+          <FormatBoldIcon />
+        </MarkButton>
+        <MarkButton format="italic">
+          <FormatItalicIcon />
+        </MarkButton>
+        <MarkButton format="underline">
+          <FormatUnderlinedIcon />
+        </MarkButton>
+        <MarkButton format="code">
+          <CodeIcon />
+        </MarkButton>
+        <BlockButton format="heading-one">
+          <LooksOneIcon />
+        </BlockButton>
+        <BlockButton format="heading-two">
+          <LooksTwoIcon />
+        </BlockButton>
+        <BlockButton format="block-quote">
+          <FormatQuoteIcon />
+        </BlockButton>
+        <BlockButton format="numbered-list">
+          <FormatListNumberedIcon />
+        </BlockButton>
+        <BlockButton format="bulleted-list">
+          <FormatListBulletedIcon />
+        </BlockButton>
+      </Toolbar>
+      <Editable
+        renderElement={renderElement}
+        renderLeaf={renderLeaf}
+        placeholder="Enter some rich text…"
+        spellCheck        
+        onKeyDown={event => {
+          for (const hotkey in HOTKEYS) {
+            if (isHotkey(hotkey, event)) {
+              event.preventDefault();
+              const mark = HOTKEYS[hotkey];
+              toggleMark(editor, mark);
+            }
+          }
+        }}
+      />
+    </Slate>  
   );
 };
 
@@ -142,11 +156,15 @@ const isBlockActive = (editor, format) => {
 };
 
 const toggleBlock = (editor, format) => {  
-  const isActive = isBlockActive(editor, format);
+  const isActive = isBlockActive(editor, format, TEXT_ALIGN_TYPES.includes(format) ? 'align' : 'type');
   const isList = LIST_TYPES.includes(format);
 
   Transforms.unwrapNodes(editor, {
-    match: n => LIST_TYPES.includes(n.type),
+    match: n =>
+      !Editor.isEditor(n) &&
+      SlateElement.isElement(n) &&
+      LIST_TYPES.includes(n.type) &&
+      !TEXT_ALIGN_TYPES.includes(format),
     split: true
   });
 
@@ -159,8 +177,6 @@ const toggleBlock = (editor, format) => {
     Transforms.wrapNodes(editor, block);
   }
 };
-
-const LIST_TYPES = ["numbered-list", "bulleted-list"];
 
 //---mark---
 
