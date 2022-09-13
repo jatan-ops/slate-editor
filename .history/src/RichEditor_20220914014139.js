@@ -17,7 +17,6 @@ import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 
 import {Toolbar} from './Components'
-import './index.css'
 
 import { v4 as uuidv4 } from 'uuid';
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import isHotkey from "is-hotkey";
 import { Editable, withReact, Slate, useSlate } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
@@ -17,9 +17,6 @@ import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 
 import {Toolbar} from './Components'
-import './index.css'
-
-import { v4 as uuidv4 } from 'uuid';
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -30,29 +27,20 @@ const HOTKEYS = {
 
 const LIST_TYPES = ["numbered-list", "bulleted-list"];
 
-const RichEditor = () => {
+const RichEditor = ({ value, setValue }) => {
 
   const editorRef = useRef()
   if (!editorRef.current) editorRef.current = withHistory(withReact(createEditor()))
   const editor = editorRef.current
 
-  const [instanceId, setInstanceId] = useState(uuidv4())
-
   return (
     <Box p={1} m={2} border={1} borderColor="grey.500" borderRadius={4}>
       <Slate
         editor={editor}
-        value={initialValue}
-        // onChange={value => {
-        //   const isAstChange = editor.operations.some(
-        //     op => 'set_selection' !== op.type
-        //   )
-        //   if (isAstChange) {
-        //     // Save the value to Local Storage.
-        //     const content = JSON.stringify(value)
-        //     localStorage.setItem(instanceId, content)
-        //   }
-        // }}
+        value={value}
+        onChange={value => {
+          setValue(value);
+        }}
       >
         <Toolbar>
           <MarkButton format="bold">
@@ -223,43 +211,5 @@ const toggleMark = (editor, format) => {
     Editor.addMark(editor, format, true);
   }
 };
-
-const initialValue = [
-  {
-    type: 'paragraph',
-    children: [
-      { text: 'This is editable ' },
-      { text: 'rich', bold: true },
-      { text: ' text, ' },
-      { text: 'much', italic: true },
-      { text: ' better than a ' },
-      { text: '<textarea>', code: true },
-      { text: '!' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      {
-        text:
-          "Since it's rich text, you can do things like turn a selection of text ",
-      },
-      { text: 'bold', bold: true },
-      {
-        text:
-          ', or add a semantically rendered block quote in the middle of the page, like this:',
-      },
-    ],
-  },
-  {
-    type: 'block-quote',
-    children: [{ text: 'A wise quote.' }],
-  },
-  {
-    type: 'paragraph',
-    align: 'center',
-    children: [{ text: 'Try it out for yourself!' }],
-  },
-]
 
 export default RichEditor;

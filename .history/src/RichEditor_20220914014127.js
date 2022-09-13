@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import isHotkey from "is-hotkey";
 import { Editable, withReact, Slate, useSlate } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
@@ -17,7 +17,6 @@ import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 
 import {Toolbar} from './Components'
-import './index.css'
 
 import { v4 as uuidv4 } from 'uuid';
 

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react'
-import { Transforms, createEditor, Descendant } from 'slate'
-import { Slate, Editable, useSlateStatic, withReact } from 'slate-react'
+import { Transforms, createEditor } from 'slate'
+import { Slate, Editable, withReact } from 'slate-react'
 import { withHistory } from 'slate-history'
-import { css } from '@emotion/css'
+import Toolbar from './Components'
 
 import RichEditor from './RichEditor'
 
@@ -11,11 +11,9 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import { Button, Icon, Toolbar } from './Components'
-
 const EditableVoidsExample = () => {
 
-  const editorRef = useRef()
+  let editorRef = useRef()
   if (!editorRef.current) editorRef.current = withEditableVoids(withHistory(withReact(createEditor())))
   const editor = editorRef.current
 
@@ -30,14 +28,20 @@ const EditableVoidsExample = () => {
       //   if (isAstChange) {
       //     // Save the value to Local Storage.
       //     const content = JSON.stringify(value)
-      //     localStorage.setItem('parent', content)
+      //     localStorage.setItem('parent-content', content)
       //   }
       // }}
     >
       <Toolbar>
-        <InsertEditableVoidButton />
+        <button
+          onMouseDown={event => {
+            event.preventDefault()
+            insertEditableVoid(editor)
+          }}
+        >
+          add
+        </button>
       </Toolbar>
-
       <Editable
         renderElement={props => <Element {...props} />}
         placeholder="Enter some text..."
@@ -49,9 +53,7 @@ const EditableVoidsExample = () => {
 const withEditableVoids = editor => {
   const { isVoid } = editor
 
-  editor.isVoid = element => {
-    return element.type === 'editable-void' ? true : isVoid(element)
-  }
+  editor.isVoid = element => element.type === 'editable-void' ? true : isVoid(element)
 
   return editor
 }
@@ -78,35 +80,23 @@ const Element = props => {
 
 const EditableVoid = ({ attributes, children, element }) => {
 
-  return (
-    // Need contentEditable=false or Firefox has issues with certain input types.
-    <div {...attributes} contentEditable={false}>
-      <Container md={12} >
+  return (      
+    <div {...attributes}>
+      <RichEditor />
+      {/* <Container>
         <Row>
           <Col md={6} >
             <RichEditor />
           </Col>
-          <Col>
+        </Row>
+        <Row>
+          <Col md={6} >
             <RichEditor />
           </Col>
         </Row>
-      </Container>
-      {children}
+      </Container> */}
+      {children}      
     </div>
-  )
-}
-
-const InsertEditableVoidButton = () => {
-  const editor = useSlateStatic()
-  return (
-    <Button
-      onMouseDown={event => {
-        event.preventDefault()
-        insertEditableVoid(editor)
-      }}
-    >
-      <Icon>add</Icon>
-    </Button>
   )
 }
 
@@ -116,22 +106,10 @@ const initialValue = [
     children: [
       {
         text:
-          'In addition to nodes that contain editable text, you can insert void nodes, which can also contain editable elements, inputs, or an entire other Slate editor.',
+          'This is parent editor',
       },
     ],
-  },
-  {
-    type: 'editable-void',
-    children: [{ text: '' }],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      {
-        text: '',
-      },
-    ],
-  },
+  }
 ]
 
 export default EditableVoidsExample

@@ -4,13 +4,7 @@ import { Slate, Editable, useSlateStatic, withReact } from 'slate-react'
 import { withHistory } from 'slate-history'
 import { css } from '@emotion/css'
 
-import RichEditor from './RichEditor'
-
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
+import RichTextEditor from './richtext'
 import { Button, Icon, Toolbar } from './Components'
 
 const EditableVoidsExample = () => {
@@ -20,20 +14,7 @@ const EditableVoidsExample = () => {
   const editor = editorRef.current
 
   return (
-    <Slate 
-      editor={editor} 
-      value={initialValue}
-      // onChange={value => {
-      //   const isAstChange = editor.operations.some(
-      //     op => 'set_selection' !== op.type
-      //   )
-      //   if (isAstChange) {
-      //     // Save the value to Local Storage.
-      //     const content = JSON.stringify(value)
-      //     localStorage.setItem('parent', content)
-      //   }
-      // }}
-    >
+    <Slate editor={editor} value={initialValue}>
       <Toolbar>
         <InsertEditableVoidButton />
       </Toolbar>
@@ -76,21 +57,59 @@ const Element = props => {
   }
 }
 
+const unsetWidthStyle = css`
+  width: unset;
+`
+
 const EditableVoid = ({ attributes, children, element }) => {
+  const [inputValue, setInputValue] = useState('')
 
   return (
     // Need contentEditable=false or Firefox has issues with certain input types.
     <div {...attributes} contentEditable={false}>
-      <Container md={12} >
-        <Row>
-          <Col md={6} >
-            <RichEditor />
-          </Col>
-          <Col>
-            <RichEditor />
-          </Col>
-        </Row>
-      </Container>
+      <div
+        className={css`
+          box-shadow: 0 0 0 3px #ddd;
+          padding: 8px;
+        `}
+      >
+        <h4>Name:</h4>
+        <input
+          className={css`
+            margin: 8px 0;
+          `}
+          type="text"
+          value={inputValue}
+          onChange={e => {
+            setInputValue(e.target.value)
+          }}
+        />
+        <h4>Left or right handed:</h4>
+        <input
+          className={unsetWidthStyle}
+          type="radio"
+          name="handedness"
+          value="left"
+        />{' '}
+        Left
+        <br />
+        <input
+          className={unsetWidthStyle}
+          type="radio"
+          name="handedness"
+          value="right"
+        />{' '}
+        Right
+        <h4>Tell us about yourself:</h4>
+        <div
+          className={css`
+            padding: 20px;
+            border: 2px solid #ddd;
+          `}
+        >
+          <RichTextEditor />
+        </div>
+      </div>
       {children}
     </div>
   )

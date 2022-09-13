@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import isHotkey from "is-hotkey";
 import { Editable, withReact, Slate, useSlate } from "slate-react";
 import { createEditor, Editor, Transforms } from "slate";
@@ -16,10 +16,11 @@ import FormatListNumberedIcon from "@material-ui/icons/FormatListNumbered";
 import FormatListBulletedIcon from "@material-ui/icons/FormatListBulleted";
 import ToggleButton from "@material-ui/lab/ToggleButton";
 
-import {Toolbar} from './Components'
 import './index.css'
 
 import { v4 as uuidv4 } from 'uuid';
+
+import { Button, Icon, Toolbar } from './Components'
 
 const HOTKEYS = {
   "mod+b": "bold",
@@ -31,7 +32,7 @@ const HOTKEYS = {
 const LIST_TYPES = ["numbered-list", "bulleted-list"];
 
 const RichEditor = () => {
-
+  
   const editorRef = useRef()
   if (!editorRef.current) editorRef.current = withHistory(withReact(createEditor()))
   const editor = editorRef.current
@@ -43,7 +44,7 @@ const RichEditor = () => {
       <Slate
         editor={editor}
         value={initialValue}
-        // onChange={value => {
+        //  onChange={value => {
         //   const isAstChange = editor.operations.some(
         //     op => 'set_selection' !== op.type
         //   )
@@ -234,32 +235,31 @@ const initialValue = [
       { text: 'much', italic: true },
       { text: ' better than a ' },
       { text: '<textarea>', code: true },
-      { text: '!' },
-    ],
+      { text: '!' }
+    ]
   },
   {
     type: 'paragraph',
     children: [
       {
         text:
-          "Since it's rich text, you can do things like turn a selection of text ",
+          "Since it's rich text, you can do things like turn a selection of text "
       },
       { text: 'bold', bold: true },
       {
         text:
-          ', or add a semantically rendered block quote in the middle of the page, like this:',
-      },
-    ],
+          ', or add a semantically rendered block quote in the middle of the page, like this:'
+      }
+    ]
   },
   {
     type: 'block-quote',
-    children: [{ text: 'A wise quote.' }],
+    children: [{ text: 'A wise quote.' }]
   },
   {
     type: 'paragraph',
-    align: 'center',
-    children: [{ text: 'Try it out for yourself!' }],
-  },
-]
+    children: [{ text: 'Try it out for yourself!' }]
+  }
+];
 
 export default RichEditor;
